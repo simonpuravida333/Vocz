@@ -1,0 +1,2526 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Vocz</title>
+	<link rel="icon" href='https://drive.google.com/uc?export=view&id=15VahmPpJSvt1Jq3TCVtaH6wiQQm-LNhj'>
+</head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&family=East+Sea+Dokdo&family=Gaegu:wght@300;400;700&family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;1,100;1,200;1,300;1,400&family=Nerko+One&display=swap" rel="stylesheet">
+
+<script>
+// FOR THE USER.
+
+// All these symbols are free to change. Make sure they don't occur anywhere else in your vocabulary file.
+var seperationSign = '|'; // Separation character(s) between vocabulary and its translation.
+var lineBreakSign = ';:' // Creates line breaks within the translations. For visiblity if there are several meanings for one vocabulary.
+var highlightSign = '::'; // For translations: if added directly in front of a word (without space) the word is highlighted.
+var strongSeperation = false; // If changed to 'true', creates larger line break spaces within the translations.
+
+// Delay for translations in milliseconds. Time to remember the meaning of a vocabulary, before the translation gets displayed. That's why the first and second promotion (in this default-setting) take the longest time (user has yet to think harder) and the highest promotion is the quickest.
+// VALUES SHOULD NOT GO BELOW 400ms! Vocz needs time to fade and unfade, if it's too fast, the display functions won't work properly!
+var noPromotionTime = 400;
+
+var firstPromotionTime = 3000;
+var secondPromotionTime = 3000;
+var thirdPromotionTime = 2000;
+var fourthPromotionTime = 1000;
+
+// Probability in percentage for vocabulary to get skipped.
+var noPromotionSkip = 0; // unpromoted ones
+
+var firstPromotionSkip = 33; // first promotion
+var secondPromotionSkip = 50; // ... second promotion, and so on ...
+var thirdPromotionSkip = 67;
+var fourthPromotionSkip = 90;
+
+// If You want to make highest promotion to be skipped always (because you feel certain about it), just raise it to 100. Or if you want to make highest or a certain promotion to be asked only, set it to zero and any other promotion to 100. By raising the numbers of all promotions (including non-promoted ones) the walkthrough will be much quicker. If four promotions are too many steps for you, just raise e.g. the third and fourth to a 100, which will leave you with only two promotions.
+
+// Background images to load from the internet or your computer.
+var backgroundOne = 'https://i.ibb.co/Sf27gY9/night-city-panorama-horizon-sunset-hyogo-japan.jpg';
+var backgroundTwo = 'https://i.ibb.co/G2RJtr7/sea-1671036317923-6403.jpg';
+var backgroundThree = 'https://i.ibb.co/rxq5S4r/glowing-algae-australia-2.jpg';
+var backgroundFour = 'https://i.ibb.co/yFBZY5W/switzerland-3840x2160-4k-5k-wallpaper-alps-mountains-stars-night-5713-centered.jpg';
+// ... matterhorn with a wider view:
+// var backgroundFour = 'https://i.ibb.co/7pdvVTT/switzerland-3840x2160-4k-5k-wallpaper-alps-mountains-stars-night-5713-1.jpg';
+
+// Make sure to post the link of the actual image, not just the page wherein the image appears. To load images from your computer just paste the path of the image, like C:/Users/Your Name/Pictures/Night Sky.jpg. Use forward slash / or double backwards slash \\ for folder paths (not single backwards slash \ as in Windows file paths). If the image is in the same folder as this script, you can just put the image's name into the inverted commas without a path; don't forget the file filename extension (like .jpg or .png).
+// NOTE: image names should not have parantheses (). So an image with the name "Screenshot (324).png" might not get loaded.
+
+/*
+Example of an image from a drive:
+var backgroundOne = 'F:/Pictures/Nova Scotia/Seaside.png'
+
+Example of an image from the same folder this script is running:
+var backgroundOne = 'Seaside.png'
+*/
+
+// original wallpaper ressources:
+// one: https://wallpapercrafter.com/sizes/1920x1080/15535-night-city-panorama-horizon-sunset-hyogo-japan-4k.jpg
+// two: https://wallup.net/wp-content/uploads/2016/07/20/24814-sea-sunset-blue-clouds.jpg
+// three: https://i.guim.co.uk/img/media/b928c74275134ffe2d948d80b4e74ec3e7f89497/0_0_7946_5300/master/7946.jpg?width=1920&quality=85&auto=format&fit=max&s=619d0f2c4b067865daebb0838e436701
+// four: https://wallpapershome.com/images/wallpapers/switzerland-3840x2160-4k-5k-wallpaper-alps-mountains-stars-night-5713.jpg
+// ... the reason I have them laod from a file hoster is because they needed asjustment: I had to darken bright parts in the images (e.g. the Matterhorn in the center was snow white), to keep some acceptable contrast to the white text. I also limited the resolution to fullhd.
+</script>
+
+
+
+
+
+
+
+
+
+<script> // GLOBAL VARIABLES
+// This script contains the important global variables, plus the function that resets them when opening a new file.
+
+// There are several arrays: 'vocz' contains all vocabulary from the file, 'voczTranslation' all its translations, 'loadedVocz' contains all vocabulary from local storage of the same file from last session, 'loadedVoczPromotions' contains the accompanying promotions from local storage from last session of the same file.
+// 'traceBackUnskippedVocz' stores all vocabulary that are not skipped while in session (for proper way of going back) and is used only when going back. 'shuffledSuccession' is an array with all the numbers from 0 to vocz.length-1, it will get shuffled and be put as an overlay array into the vocz array index: this allows to keep the vocz array unshuffled (which makes saving easier and most importantly: the matching with promotions).
+// If there has been a session earlier, the array in local storage 'loadedVoczPromotion' overwrites the array promotions, which by default is filled with 5 at each slot (5 = unpromoted, 1 = fully promoted). If, additional, the file has been changed since last session, it will compare each word from 'vocz' with 'loadedVocz' from local storage and - when it matches - overwrite the accompanying 'promotions' from 'loadedVoczPromotions'.
+
+// Throughout the script there are more global variables with a use too specific to be put here. They appear above a function they're used in and are merely put outside the function keep states during runtime.
+// The script is purely functional, hence the many global variables.
+
+// I did it originally for my own interest to go deeper into advanced vocabulary, then it became a fun project that I continued improving.
+
+// The script is chopped into several parts to allow a better overview, with each section having a chapter name.
+
+var temporaryTime;	 // promotion time
+
+var vocz = []; 	// vocabulary from file
+var voczTranslation = []; // translations / meaning from file
+var promotions = []; // accompanying promotions (1 to 5. 1 is highest, 5 is lowest promotion, all intialized with 5).
+var shuffledSuccession = []; // length of vocz[] with mixed-up index numbers of vocz[] as overlay-array for shuffled playback
+
+var promotionStart = 5;
+
+var traceBackUnskippedVocz = []; // saves all the vocabulary that are displayed / not skipped, when going backwards (user hitting left-arrow key)
+var traceBackCounter = -1;
+
+var loadedVocz = []; // vocabulary from localStorage
+var loadedVoczPromotions = []; 	// promotions from localStorage
+
+var skippedVoczArray = []; // saves all the vocabulary that have been skipped, for console output
+
+// some counters / data 
+var counter = -1; // for shuffledSuccession[counter]
+var voczAmount = 0;
+var skippedVocz = 0;
+var loadedVoczAmount = 0;
+var stillGoing = true;
+
+var showVocz; // HTML element that shows the vocabulary, initialized in the beginning (bottom of script)
+var showTranslation; // HTML element that shows the translation
+
+var fileName; // name of presently used file. For saves to local storage.
+var hasAFile = false; // when a second file is loaded, that Vocz knows there was a previous one (for smooth transition)
+var hasATitle = false; // ... same for title
+
+var letterSpacing = "0.05em"; // the spacing of the initial font. This changes when the user cycles through fonts. It's a variable to read for setting of styling of the vocabulary, which gets its own independent styling overwrite (in the promotionStyle function).
+
+var simultaneousMessages = ['Message1','Message2','Message3','Message4','Message5']; // a pop-push array that activates / deactivates div elements that show messages above the vocabulary section. In case several messages get shown at once, to make certain they don't get into each other's way. EDIT: meanwhile mostly obsolete.
+
+function resetForNewFile()
+{
+	vocz = [];
+	voczTranslation = [];
+	promotions = [];
+	shuffledSuccession = [];
+	traceBackUnskippedVocz = [];
+	loadedVocz = [];
+	loadedVoczPromotions = [];
+	skippedVoczArray = [];
+    
+	fileName ="";
+    
+	counter = -1;
+	voczAmount = 0;
+	stillGoing = true;
+	traceBackCounter = -1;
+	skippedVocz = 0;
+	loadedVoczAmount = 0;
+
+	callFromInside = false;
+	callFromOutside = true;
+	
+	firstVoc = true;
+
+	oldElement = "";
+
+	blockNextVoc = false;
+	runFinished = false;
+}
+</script>
+
+
+
+
+
+<script> // SCRIPT FOR ELEMENTS: ACTIVATE / DEACTIVATE & FADE / UNFADE
+// Most functions send elements to activate / decactivate, which will route the element through the unfade / fade functions, for smooth transitions. But sometimes there's an advantage for using unfade / fade directly: when you want to keep the element space on the screen. It will allow everything to stay in place, instead of readjusting itself (because an element had been removed), as elements are placed relative to each other.
+// activating / deactiving HTML elements can be a delicate business. You have to carefully handly styling, which may get lost by deactivation of element.
+
+var oldElement = "";
+function unfade(element,speed,firstUnfadeCall)
+{
+	
+// This function, and also the fade function, is my cleanest solution for making the interchange of elements smooth.
+// The function gets the parameter, sets it's opacity to 0.1 and than loops the function until the opacity reaches 1. Its taken from Ibu's answer: http://stackoverflow.com/questions/6121203/how-to-do-fade-in-and-fade-out-with-javascript-and-css
+// The first if-check is only meant to fire when called from showVocabulary. From the second call from showVocabulary it will compare the old vocabulary from last call with the new one. It stops the function if it is the same. This way I prevent the fade to effect when new vocabularies are called fast (e.g. keeping the key pressed). Because otherwise the function stacks up and will cause the vocabulary to flicker (when key released) as long as the stack. It just looks bad.
+	
+// ...when writing this script, I spent more time on making a good appearance with smooth animations than on anything else (especially the timing was tricky, making certain elements didn't get in each other's ways). But it was important to me to stay in pure JavaScript and not use a framework. I just wanted to code things up, because I love to understand everything. I wanted to program the visuals and create a good user experience.
+
+
+	if(!(typeof firstUnfadeCall === 'undefined'))
+	{
+	      	if (firstUnfadeCall) 
+	      	{
+	        	oldElement = element.innerText;
+	      	}
+	      	else
+	      	{
+	        	if(element.innerText == oldElement)
+	        	{
+	          		return;
+	        	}
+	        	else
+	        	{
+	          		oldElement = element.innerText;
+	        	}
+	      	}
+	}
+
+	if (!(typeof speed === 'undefined'))
+	{
+	      	this.speed;
+	}
+	else
+	{
+	      	speed = 0.1;
+	}
+
+    	let op = 0.1;  // initial opacity
+
+    	element.style.display = 'block';
+
+    	let timer = setInterval(function () 
+    	{
+      		if (op >= 1)
+      	{
+        	clearInterval(timer);
+      	}
+      	element.style.opacity = op;
+      	element.style.filter = 'alpha(opacity=' + op * 100 + ")";
+      	op += op * speed;
+    	},10); 
+}
+
+function fade(element,speed)
+// Inverted version of unfade. 
+{
+    	if (!(typeof speed === 'undefined'))
+    	{
+     		 this.speed;
+    	}
+    	else
+    	{
+      		speed = 0.1;
+    	}
+
+    	let op = 1;
+    	
+    	let timer = setInterval(function ()
+    	{
+        	if (op <= 0.01)
+        	{
+            		clearInterval(timer);
+        	}
+        	element.style.opacity = op;
+        	element.style.filter = 'alpha(opacity=' + op * 100 + ")";
+        	op -= op * speed;
+    	}, 5);
+}
+  
+function elementOff(element,speed)
+{
+    	if (!(typeof speed === 'undefined'))
+    	{
+      		this.speed;
+    	}
+    	else
+    	{
+      		speed = 0.1;
+    	}
+
+    	setTimeout(function () 
+    	{
+      		element.style["display"] = "none";
+      		element.style["opacity"] = "1.0";
+    	},500);
+    	
+    	fade(element,speed);
+}
+
+function elementOn(element,speed,firstUnfadeCall)
+{
+    	if (!(typeof speed === 'undefined'))
+    	{
+      		this.speed;
+    	}
+    	else
+    	{
+      		speed = 0.1;
+    	}
+
+    	element.style["opacity"] = "0.01";
+    	setTimeout(function () 
+    	{
+      		element.style["display"] = "inline";
+      		element.style["visibility"] = "visible";
+    	},500);
+    
+    	if (!(typeof firstUnfadeCall === 'undefined') && firstUnfadeCall == true)
+    	{
+      		console.log("returned!");
+      		return;
+    	}
+    	else
+    	{
+      		unfade(element,speed);
+    	}
+}
+</script>
+
+
+
+
+
+<script> // GO NEXT VOCABULARY
+// In this part of the script is the operation of moving to the next vocabulary (or backwards). It makes certain of a good presentation, savings, user preferences, etc....
+
+var runFinished = false;
+var blockNextVoc = false;
+function checkBeforeNextVocz()
+{
+	//if the end is reached
+	if (counter >= voczAmount-1 && !runFinished)
+	{
+		// console.log("counter: "+counter)
+		if (counter > voczAmount-1) counter = voczAmount-1;
+		// console.log("counter: "+counter)
+		// this check is for the unique case if the user holds down the NEXT key, which makes the vocs run through super fast. When doing so the indices ('counter') can overshoot by one at the end, becoming one index larger than there are vocz (one larger than voczAmount-1), as the follow-up functions don't keep pace with 'counter'. It results in 'undefined' for vocz[] and voczTranslation[], which will cause errors. The error can only occur at the end of a file.
+		// And you have to hold down the 'next'-key for some time, the error won't come for short bursts of holding-downs.
+		
+  		runFinished = true;
+  		stillGoing = false;
+  		entryForTranslation = false;
+  		
+  		setTimeout(endMessage,1000);
+  		if (extraEntry) showVoczTranslationGo(); // otherwise it wouldn't show translation, as entries are blocked when end is reached.
+  		
+  		let forwardButton;
+  		let replayButton;
+  		if (!differentLayout)
+  		{
+  			replayButton = document.getElementById("replayTrigger");
+  			forwardButton = document.getElementById("redMainTrigger");
+  		}
+  		else
+  		{
+  			replayButton = document.getElementById("replayTrigger2");
+  			forwardButton = document.getElementById("redMainTrigger2");
+  			
+  		}
+  		setTimeout(elementOff,1500,forwardButton);
+  		setTimeout(elementOn,2000,replayButton);
+  		
+  		replayTriggerVisible = true;
+  		console.log("\n\n\n");
+  		console.log("Skipped vocabulary:");
+  		for (let i = 0; i < skippedVoczArray.length; i++)
+  		{
+			console.log(skippedVoczArray[i]);
+		}
+	}
+	else if (traceBackCounter < traceBackUnskippedVocz.length-1 && stillGoing)
+	// if user is in array traceBackUnskippedVocz
+	{
+  		traceBackCounter++;
+  		setTimeout(showVocabulary, 50);
+  		
+  		if (traceBackCounter < traceBackUnskippedVocz.length-1)
+  		{
+    		if(!blockNextVoc)
+    		{
+    			setTimeout(showVoczTranslationGo,50,traceBackUnskippedVocz[traceBackCounter]);
+    			blockNextVoc = true;
+    		}
+ 		}
+  		else
+  		{
+    		if(!blockNextVoc)
+    		{
+    			setTimeout(showVoczTranslationGo,50);
+    			blockNextVoc = true;
+    		}
+  		}
+	}
+	else
+	// going forward.
+	{
+  		if (stillGoing)
+  		{
+    		if(!extraEntry || !entryForTranslation) counter++;
+    		
+    		if(skipping && (!extraEntry || !entryForTranslation))
+    		{
+      			checkPromotion();
+    		}
+    		else
+    		{
+    			if(!entryForTranslation)
+    			{
+    				traceBackUnskippedVocz.push(shuffledSuccession[counter]);
+    				traceBackCounter++;
+    			}      				
+      			goToNextVocAndTranslation();
+    		}
+  		}
+	}
+}
+
+var entryForTranslation = false;
+function goToNextVocAndTranslation()
+// This function does both: display vocabulary and display translation.
+// This extra function is necessary because of the extraEntry (button Translation Call) option. Earlier this content was at the end of the checkBeforeNextVoc() but meanwhile it's outside for clarity reasons.
+{
+	console.log("Progress: "+Number(( (100/voczAmount)*(counter+1)).toFixed(1)) +"%\nVoc position: "+(counter+1));
+
+	if (extraEntry)
+	{
+  		entryForTranslation ^= true;
+	}
+
+	// This is necessary if jumped to next voc in less time than temporaryTime. Otherwise intervals get shifted
+	if(trackTranslationTimeout)
+	{
+		clearTimeout(cancelTranslationTimeout);
+		blockNextVoc = false;
+	}
+
+	if(!extraEntry || entryForTranslation)
+	{
+  		setTimeout(showVocabulary, 50);
+  		if(entryForTranslation && !firstCallNextFile)fade(showTranslation);
+  		firstCallNextFile = false;
+	}
+	
+	if(!extraEntry || !entryForTranslation)
+	{
+  		if(!blockNextVoc)
+  		{
+    		setTimeout(fadeShowVoczTranslationGo,100);
+    		blockNextVoc = true;
+  		}
+	}
+}
+
+var firstVoc = true;
+function showVocabulary()
+{
+	if(!callFromOutside)
+	{
+  		showInfo();
+	}
+	else
+	{
+  		makeRoom();
+	}
+
+	if (firstVoc)
+	{
+  		firstVoc = false;
+  		showVocz.style["opacity"] = "0.01";
+  		setTimeout(unfade,50,showVocz,0.05,true);
+  		showTranslation.style["opacity"] = "0.01";
+  		let message = document.getElementById("Message0");
+  		setTimeout(elementOff,1000,message);
+	}
+	else
+	{
+  		setTimeout(unfade,20,showVocz,0.2,false);
+	}
+
+	if(traceBackCounter == traceBackUnskippedVocz.length-1)
+	{
+  		promotionStyle(showVocz,shuffledSuccession[counter]);
+  		showVocz.innerHTML = vocz[shuffledSuccession[counter]];
+	}
+	else
+	{
+  		promotionStyle(showVocz,traceBackUnskippedVocz[traceBackCounter],false);
+  		showVocz.innerHTML = vocz[traceBackUnskippedVocz[traceBackCounter]];
+	}
+}
+
+var cancelTranslationTimeout;
+var trackTranslationTimeout = false;
+function fadeShowVoczTranslationGo(previousVocz)
+{	
+	if (showTranslation.style["opacity"] > 0.5 )
+	{
+		fade (showTranslation);
+	}
+	
+	if (!(typeof previousVocz === 'undefined'))
+	{
+		cancelTranslationTimeout = setTimeout(showVoczTranslationGo, temporaryTime, previousVocz);
+	}
+	else
+	{
+		cancelTranslationTimeout = setTimeout(showVoczTranslationGo, temporaryTime);
+	}
+	trackTranslationTimeout = true;
+}
+
+function getPreviousVocz()
+{
+	if (stillGoing && traceBackCounter > 0)
+	{
+    	clearTimeout(cancelTranslationTimeout);
+      	traceBackCounter--;
+      	promotionStyle(showVocz,traceBackUnskippedVocz[traceBackCounter],false);
+      	unfade(showVocz,0.2,false);
+      	showVocz.innerHTML = vocz[traceBackUnskippedVocz[traceBackCounter]];
+      	showVoczTranslationGo(traceBackUnskippedVocz[traceBackCounter]);
+	}
+}
+
+function endMessage()
+{
+	let message = document.getElementById("Message0");
+	message.innerHTML = "Congrats, you've called all Vocz.<br>"+skippedVocz+" Vocz were skipped.";
+	elementOn(message);
+}
+</script>
+
+
+
+
+
+<script> // STYLING SCRIPT. It gives promotion styles to vocabularies and text styling to translations
+function promotionStyle(element,thisCounter,noDelay)
+{
+	let tempTrigger;
+	if (!(typeof noDelay === 'undefined')&& noDelay == false)
+	{
+  		tempTrigger = false;
+	}
+	else
+	{
+  		tempTrigger = triggerPromotionDelay;
+	}
+	
+	switch (promotions[thisCounter])
+	{
+  		case 4:
+  			element.style.color = "#FFB061";
+      		element.style["font-weight"] = "600";
+      		element.style["letter-spacing"] = "0.10em"
+      		element.style["text-shadow"] = "0px 0px 15px #FFDE80";
+      		if(tempTrigger){temporaryTime = firstPromotionTime} else {temporaryTime = noPromotionTime};
+      		break;
+  		case 3:
+  			element.style.color = "#FF667F";
+      		element.style["font-weight"] = "600";
+      		element.style["letter-spacing"] = "0.15em";
+      		element.style["text-shadow"] = "0px 0px 15px #FF83A1";
+      		if(tempTrigger){temporaryTime = secondPromotionTime} else {temporaryTime = noPromotionTime};
+      		break;
+  		case 2:
+  			element.style.color = "#C487F4";
+      		element.style["font-weight"] = "600";
+      		element.style["letter-spacing"] = "0.20em";
+      		element.style["text-shadow"] = "0px 0px 15px #c999ff";
+      		if(tempTrigger){temporaryTime = thirdPromotionTime} else {temporaryTime = noPromotionTime};
+      		break;
+  		case 1:
+  			element.style.color = "#7DB2FF";
+      		element.style["font-weight"] = "600";
+      		element.style["letter-spacing"] = "0.25em";
+      		element.style["text-shadow"] = "0px 0px 15px #99D6FF";
+      		if(tempTrigger){temporaryTime = fourthPromotionTime} else {temporaryTime = noPromotionTime};
+      		break;
+  		case 0:
+  			element.style.color = "#FFFFFF";
+      		element.style["font-weight"] = 400;
+      		element.style["letter-spacing"] = letterSpacing;
+      		element.style["text-shadow"] = "none";
+      		temporaryTime = noPromotionTime;
+      		break;
+  		default:
+  			element.style.color = "#FFFFFF";
+      		element.style["font-weight"] = 400;
+      		element.style["letter-spacing"] = letterSpacing;
+      		element.style["text-shadow"] = "none";
+      		temporaryTime = noPromotionTime;
+  	}
+}
+
+function showVoczTranslationGo(previousVocz)
+// This function gives styling to the translations by using the innerHTML visualizations. Of course one may say it would be less costly to have styling added to each translation of a file in the beginning of a session, but since many may get skipped (at quick runs in big file it can be as much as 95% or more) it's actually more efficient to just have each translation that actually shows up go through this function.
+// innerHTML is better; I wrote the script originally only with innerText (and using element.styles for styling), which has the disadvantage that any styling always applies for the whole innerText. Meanwhile everything is changed to innerHTML, but I stayed with the element.style approach in most cases (instead of wrapping HTML-markup around the texts), as it allows for more dynamic element handling.
+
+{
+	trackTranslationTimeout = false;
+	unfade(showTranslation);
+
+	let str = "";
+	if (!(typeof previousVocz === 'undefined'))
+	{
+		str = voczTranslation[previousVocz];
+	}
+	else
+	{
+ 		str = voczTranslation[shuffledSuccession[counter]];
+	}
+    	
+	let informal = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>informal</text style>';
+	let formal = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>formal</text style>';
+	let newLine = '<text style="color:#10c6eb;font-family:Amiri;font-size: 1.0em";><br>·  •  ●  •  ·<br></text style>';
+	let newLineStrongSeperation = '<text style="color:#10c6eb;font-family:Amiri;font-size: 1.0em";><br>·  •  ១  •  ·<br></text style>'; // some ideas for line seperation signs ១ 𑁞 ᦠ ᦨ ꦒ 𑄕
+	let british = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>British</text style>';
+	let archaic = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>archaic</text style>';
+	let obsolete = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>obsolete</text style>';
+	let dated = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>dated</text style>';
+	let dialect = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>dialect</text style>';
+	let regional = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>regional</text style>';
+	let US = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>US</text style>';
+	let scottish = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Scottish</text style>';
+	let irish = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Irish</text style>';
+	let aussie = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Australian</text style>';
+	let kiwi = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>New Zealand</text style>';
+	let rsa = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>South African</text style>';
+	let indian = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Indian</text style>';
+	let humorous = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>humorous</text style>';
+	let technical = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>technical</text style>';
+	let figurative = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>figurative</text style>';
+	let psychology = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Psychology</text style>';
+	let meteorology = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Meteorology</text style>';
+	let architecture = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Architecture</text style>';
+	let literary = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>literary</text style>';
+	let zoology = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Zoology</text style>';
+	let botany = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Botany</text style>';
+	let rare = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>rare</text style>';
+	let nautical = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>nautical</text style>';
+	let med = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Medicine</text style>';
+	let anatomy = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Anatomy</text style>';
+	let bio = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Biology</text style>';
+	let geo = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Geology</text style>';
+	let military = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>military</text style>';
+	let slang = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>slang</text style>';
+	let law = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Law</text style>';
+	let historical = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>historical</text style>';
+	let economics = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Economics</text style>';
+	let astronomy = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Astronomy</text style>';
+	let archeology = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Archeology</text style>';
+	let business = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Business</text style>';
+	let geometry = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Geometry</text style>';
+	let mathematics = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>Mathematics</text style>';
+	
+	
+	// word type signifiers have a different style
+	let adjective = '<text style="color:#fc7703;font-size: 0.7em;text-transform: uppercase; font-weight:700;font-style: italic";>adjective</text style>';
+	let noun = '<text style="color:#fc7703;font-size: 0.7em;text-transform: uppercase;font-weight:700;font-style: italic";>noun</text style>';
+	let verb = '<text style="color:#fc7703;font-size: 0.7em;text-transform: uppercase;font-weight:700;font-style: italic";>verb</text style>';
+	    
+	if(strongSeperation)
+	{
+		str = str.replaceAll (lineBreakSign, newLineStrongSeperation);
+	}
+   	else
+	{
+		str = str.replaceAll (lineBreakSign, newLine);
+	}
+	str = str.replaceAll ("INF", informal);
+	str = str.replaceAll ("(informal)", informal);
+	str = str.replaceAll ("FORMAL", formal);
+	str = str.replaceAll ("FORM", formal);
+	str = str.replaceAll ("(formal)", formal);
+	str = str.replaceAll ("GB", british);
+	str = str.replaceAll ("(archaic)", archaic);
+	str = str.replaceAll ("OBS", obsolete);
+	str = str.replaceAll ("(obsolete)", obsolete);
+	str = str.replaceAll ("(dated)", dated);
+	str = str.replaceAll ("(dialect)", dialect);
+	str = str.replaceAll ("(regional)", regional);
+	str = str.replaceAll ("SCOT", scottish);
+	str = str.replaceAll ("IRISH", irish);
+	str = str.replaceAll ("AUSTR", aussie);
+	str = str.replaceAll ("US", US);
+	str = str.replaceAll ("NZ", kiwi);
+	str = str.replaceAll ("South African", rsa);
+	str = str.replaceAll ("INDIAN", indian);
+	str = str.replaceAll ("HUM", humorous);
+	str = str.replaceAll ("(humorous)", humorous);
+	str = str.replaceAll ("TECH", technical);
+	str = str.replaceAll ("(technical)", technical);
+	str = str.replaceAll ("FIG", figurative);
+	str = str.replaceAll ("PSYCH", psychology);
+	str = str.replaceAll ("METEO", meteorology);
+	str = str.replaceAll ("ARCH", architecture);
+	str = str.replaceAll ("LIT", literary);
+	str = str.replaceAll ("ZOOL", zoology);
+	str = str.replaceAll ("BOT", botany);
+	str = str.replaceAll ("(rare)", rare);
+	str = str.replaceAll ("nautical", nautical);
+	str = str.replaceAll ("MED", med);
+	str = str.replaceAll ("ANAT", anatomy);
+	str = str.replaceAll ("BIOL", bio);
+	str = str.replaceAll ("BIO", bio);
+	str = str.replaceAll ("GEOL", geo);
+	str = str.replaceAll ("GEO", geo);
+	str = str.replaceAll ("MIL", military);
+	str = str.replaceAll ("SLANG", slang);
+	str = str.replaceAll ("SL", slang);
+	str = str.replaceAll ("(slang)", slang);
+	str = str.replaceAll ("LAW", law);
+	str = str.replaceAll ("HIST", historical);
+	str = str.replaceAll ("ECON", economics);
+	str = str.replaceAll ("ASTRO", astronomy);
+	str = str.replaceAll ("(archeology)", archeology);
+	str = str.replaceAll ("(business)", business);
+	str = str.replaceAll ("(geometry)", geometry);
+	str = str.replaceAll ("MATH", mathematics);
+	str = str.replaceAll ("(mathematics)", mathematics);
+	
+	// word type signifiers have a different style 
+	str = str.replaceAll ("(adjective)", adjective);
+	str = str.replaceAll ("ADJ", adjective);
+	str = str.replaceAll ("adjective:", adjective);
+	str = str.replaceAll ("(verb)", verb);
+	str = str.replaceAll ("VERB", verb);
+	str = str.replaceAll ("verb:", verb);
+	str = str.replaceAll ("NOUN", noun);
+	str = str.replaceAll ("(noun)", noun);
+	str = str.replaceAll ("noun:", noun);
+	
+	if (str.includes(highlightSign))
+	{
+		let findHighlightWord = 0;
+		let endOfHighlightWord = 0;
+		let beginHighlight = '<text style="color:#10c6eb;font-size: 1.0em;font-weight:700; font-style: italic";>'
+		let endHighlight = '</text style>';
+	
+		while (str.includes(highlightSign))
+		{
+			findHighlightWord = str.search(highlightSign);
+			endOfHighlightWord = str.indexOf(' ', findHighlightWord);
+			str = addStr(str,endOfHighlightWord,endHighlight);
+			str = str.replace(highlightSign, beginHighlight);
+		}
+    	
+   		function addStr(str, index, stringToAdd)
+   		{	
+ 			return str.substring(0, index) + stringToAdd + str.substring(index, str.length);
+		}
+	}
+
+	showTranslation.innerHTML = str;
+
+	blockNextVoc = false;
+}
+</script>
+
+
+
+
+
+<script> // PROMOTION SCRIPT
+function promoteVocz()
+{      
+	if(traceBackCounter == traceBackUnskippedVocz.length-1)
+	{
+  		if (promotions[shuffledSuccession[counter]] > 1)
+  		{
+    		promotions[shuffledSuccession[counter]]--;
+    		promotionStyle(showVocz,shuffledSuccession[counter]);
+    	}
+	}
+	else
+	{
+  		if (promotions[traceBackUnskippedVocz[traceBackCounter]] > 1)
+  		{
+    		promotions[traceBackUnskippedVocz[traceBackCounter]]--;
+    		promotionStyle(showVocz,traceBackUnskippedVocz[traceBackCounter]);
+  		}
+	}
+	saveToLocalStore();
+	unfade(showVocz);
+}
+
+function demoteVocz()
+{      
+	if(traceBackCounter == traceBackUnskippedVocz.length-1)
+	{
+  		if (promotions[shuffledSuccession[counter]] < promotionStart)
+  		{
+    		promotions[shuffledSuccession[counter]]++;
+    		promotionStyle(showVocz,shuffledSuccession[counter]);
+   		}
+	}
+	else
+	{
+  		if (promotions[traceBackUnskippedVocz[traceBackCounter]] < promotionStart)
+  		{
+    		promotions[traceBackUnskippedVocz[traceBackCounter]]++;
+    		promotionStyle(showVocz,traceBackUnskippedVocz[traceBackCounter]);
+  		}
+	}
+	saveToLocalStore();
+	unfade(showVocz);
+}
+
+function saveToLocalStore()
+{
+	localStorage.setItem(fileName, JSON.stringify(vocz));
+	let storedPromotions = fileName.concat("Promotion");
+	localStorage.setItem(storedPromotions, JSON.stringify(promotions));
+	console.log("Vocabulary and all its promotions saved.");
+}
+
+function checkPromotion()
+{
+	let checkNextPromotion = true;
+	let result;
+    	
+    do
+	{
+		switch (promotions[shuffledSuccession[counter]])
+		{
+		  	case 4:
+		      		result = firstPromotionSkip;
+		      		break;
+		  	case 3:
+		      		result = secondPromotionSkip;
+		      		break;
+		  	case 2:
+		      		result = thirdPromotionSkip;
+		      		break;
+		  	case 1:
+		      		result = fourthPromotionSkip;
+		      		break;
+		  	default:
+		      		result = noPromotionSkip;
+		}
+
+    	let randomResult = Math.floor((Math.random() * 100) + 1);
+      		
+		console.log(vocz[shuffledSuccession[counter]]);
+		if (result > randomResult && counter >= voczAmount-1) // if end is reached.
+		{
+			checkNextPromotion = false;
+			skippedVoczArray.push(vocz[shuffledSuccession[counter]]);
+			counter++;
+			skippedVocz++;
+			console.log("Random result: "+randomResult+" < vocabulary ("+result+"%). SKIPPED!");
+			checkBeforeNextVocz(); // goes back to checkBeforeNextVocz() from which the checkPromotion() call came. There the run ends.
+		}
+		else if (result > randomResult && counter < voczAmount-1)
+		{
+			skippedVoczArray.push(vocz[shuffledSuccession[counter]]);
+			counter++;
+			skippedVocz++;
+			console.log("Random result: "+randomResult+" < vocabulary ("+result+"%). SKIPPED!");
+		}
+		else
+		{	
+			checkNextPromotion = false;
+			traceBackUnskippedVocz.push(shuffledSuccession[counter]);
+			traceBackCounter++;
+			goToNextVocAndTranslation();
+			console.log("Random result: "+randomResult+" > / = vocabulary ("+result+"%). DISPLAYED!");
+		}
+		console.log("\n");
+	}
+	while(checkNextPromotion)
+}
+</script>
+
+
+
+
+
+<script> // DISPLAY INFORMATION FOR USERS
+
+var info = true;
+var callFromInside = false;
+var callFromOutside = true;
+function showInfo()
+{
+	let infoText = "This is Vocz, a simple and beautiful aid to learn vocabulary."
+
+	let theText = document.getElementById("ShowInfo");
+	let allInfoTexts = document.getElementById("infoTrigger");
+	let userPreferencesTriggers = document.getElementById("userPreferences");
+	let purpleTrigger = document.getElementsByClassName('button purple');
+	
+	if (callFromOutside || callFromInside)
+	{
+		purpleTrigger[0].style.background = "#b378ff";
+		purpleTrigger[1].style.background = "#b378ff";
+		purpleTrigger[0].style["text-shadow"] = "0px 0px 15px #ffffff";
+		purpleTrigger[1].style["text-shadow"] = "0px 0px 15px #ffffff";
+	}
+	else
+	{
+		purpleTrigger[0].style.background = "#6744aa";
+		purpleTrigger[1].style.background = "#6744aa";
+		purpleTrigger[0].style["text-shadow"] = "none";
+		purpleTrigger[1].style["text-shadow"] = "none";
+	}
+
+	theText.innerHTML = infoText;
+	
+	makeRoom(theText);
+
+	if (callFromInside)
+	{
+  		if (info)
+  		{
+    		elementOn(theText);
+    		info = false;
+  		}
+  		else
+  		{
+    		elementOff(theText);
+    		info = true;
+  		}
+	}
+	else
+	{
+  		if (callFromOutside)
+  		{
+    		elementOn(theText);
+    		elementOn(allInfoTexts);
+    		elementOn(userPreferencesTriggers);
+    		callFromOutside = false;
+    		info = false;
+  		}
+  		else
+  		{
+    		elementOff(theText);
+    		elementOff(allInfoTexts);
+    		elementOff(userPreferencesTriggers);
+    		callFromOutside = true;
+    		info = true;
+  		}
+	}
+ 	callFromInside = false;
+}
+
+var howTo = true;
+var aboutFiles = true;
+var aboutIntention = true;
+var aboutInterpretation = true;
+var aboutPromotionSavings = true;
+var userSettings = true;
+function makeRoom(element)
+// When an info-element is active, its boolean becomes false.
+// This method checks for all those elements and if they're active (first if-boolean), except for the one from which the call came from (second if-boolean with argument). So if another info-element is active, it gets called again, which will deactivate it.
+{
+	let theInfo = document.getElementById("ShowInfo");
+	let theHowTo = document.getElementById("ShowHowTo");
+	let theAboutFiles = document.getElementById("ShowAboutFiles");
+	let theAboutIntention = document.getElementById("ShowAboutIntention");
+	let theAboutInterpretation = document.getElementById("showAboutAdvancedVocabulary");
+	let theAboutPromotionSavings = document.getElementById("ShowAboutPromotionSavings");
+    let theUserSettings = document.getElementById("ShowUserSettings");
+    	
+	if(!info && (element != theInfo))
+	{ 
+  		callFromInside = true;
+  		showInfo();
+	}
+    	    	
+	if(!howTo && (element != theHowTo))showHowTo();
+	if(!aboutFiles && (element != theAboutFiles))showAboutFiles();
+	if(!aboutIntention && (element != theAboutIntention))showAboutIntention();
+	if(!aboutInterpretation && (element != theAboutInterpretation))showAboutAdvancedVocabulary();
+	if(!aboutPromotionSavings && (element != theAboutPromotionSavings))showAboutPromotionSavings();
+	if(!userSettings&& (element != theUserSettings))showUserSettings();
+}
+
+function showHowTo()
+{
+    let howToText = "The ability to promote vocabulary is what makes Vocz special. When you feel more certain about a word you can promote it, which makes it less likely to be asked in the next session. By that, in each session the emphasis will always be on the vocabulary of importance, the ones that need more learning.<br><br>You can use it for any language and even for any other study material. In the end Vocz is just a script to test and improve your knowlegde of whatever you put into the files.<br><br>Vocz will read the content of your vocabulary file and shuffle the vocabularies at the beginning of each session.<br><br>You can click on a vocabulary to promote it, but the keyboard allows a more convenient navigation: use the arrow-keys for navigation with 'up' and 'down' triggering promotion and demotion respectively; WASD and numpad work as well. Enter and backspace, and plus and minus (on numpad) will also promote / demote. <br><br>Your progress is always saved, you can close the browser tab at any time. Vocz will remember your promotions and call them at your next session.<br><br>These are the looks of promotions and their probabilities for getting skipped. They can get promoted up to four times:<br><br>";
+
+	let theText = document.getElementById("ShowHowTo");
+	theText.innerHTML = howToText;
+
+	makeRoom(theText);
+
+	let exampleTextOne = "probability: "+firstPromotionSkip+"%<br>";
+	let exampleTextTwo = "probability: "+secondPromotionSkip+"%<br>";
+	let exampleTextThree = "probability: "+thirdPromotionSkip+"%<br>";
+	let exampleTextFour = "probability: "+fourthPromotionSkip+"%<br>";
+
+	let exampleOne = document.getElementById("Example 1");
+	let exampleTwo = document.getElementById("Example 2");
+	let exampleThree = document.getElementById("Example 3");
+	let exampleFour = document.getElementById("Example 4");
+
+	exampleOne.innerHTML = exampleTextOne;
+	exampleTwo.innerHTML = exampleTextTwo;
+	exampleThree.innerHTML = exampleTextThree;
+	exampleFour.innerHTML = exampleTextFour;
+    
+    // the 'pomotionStyle' function relies on promotions[], so styling is handled manually here for the examples:
+	exampleOne.style.color = "#FFB061";
+	exampleOne.style["font-weight"] = "600";
+	exampleOne.style["letter-spacing"] = "0.10em";
+	exampleOne.style["text-shadow"] = "0px 0px 15px #FFDE80";
+
+	exampleTwo.style.color = "#ff667f";
+	exampleTwo.style["font-weight"] = "600";
+	exampleTwo.style["letter-spacing"] = "0.15em";
+	exampleTwo.style["text-shadow"] = "0px 0px 15px #FF83A1";
+
+   	exampleThree.style.color = "#C487F4";
+   	exampleThree.style["font-weight"] = "600";
+   	exampleThree.style["letter-spacing"] = "0.20em";
+   	exampleThree.style["text-shadow"] = "0px 0px 15px #EAD7FF";
+
+	exampleFour.style.color = "#7DB2FF";
+	exampleFour.style["font-weight"] = "600";
+	exampleFour.style["letter-spacing"] = "0.25em";
+	exampleFour.style["text-shadow"] = "0px 0px 15px #99D6FF";
+	
+	let howToText2 = "<br>A note: translations of low promotions appear after a delay of a few seconds to give you time to remember the translation. Translations of higher promotions appear quicker.";
+	
+	let theText2 = document.getElementById("ShowHowTo2");
+	theText2.innerHTML = howToText2
+	
+	let infoTextBackground = document.getElementById("displayInfoText");
+	let switchHowTo = document.getElementById("switchHowTo");
+
+	if (howTo)
+	{
+		infoTextBackground.style["background-color"] = "rgba(0,0,0,0.5)";
+		switchHowTo.style["background"] = "#7baeff";
+  		elementOn(theText);
+  		elementOn(exampleOne);
+  		elementOn(exampleTwo);
+  		elementOn(exampleThree);
+  		elementOn(exampleFour);
+  		elementOn(theText2);
+  		howTo = false;
+	}
+	else
+	{
+		infoTextBackground.style["background-color"] = "rgba(0,0,0,0.0)";
+		switchHowTo.style["background"] = "#2c3b66";
+  		elementOff(theText);
+  		elementOff(exampleOne);
+  		elementOff(exampleTwo);
+  		elementOff(exampleThree);
+  		elementOff(exampleFour);
+  		elementOff(theText2)
+  		howTo = true;
+	}
+}
+
+function showUserSettings()
+{
+	let howToText = "There're six preferences options.<br><br><text style='color:#10c6eb;font-size: 1.0em;font-weight:700';>Skipping:</text style> Switches off / on the possible skips of promoted vocabulary. On by default.<br><br><text style='color:#10c6eb;font-size: 1.0em;font-weight:700';>Delay:</text style> Switches off / on the delay until the translation is shown. On by default. Cannot be on simultaneously with 'Translation Call'<br><br><text style='color:#10c6eb;font-size: 1.0em;font-weight:700';>Translation Call:</text style> Switches on / off for Vocz to wait for the user to hit NEXT for the translation to appear. Off by default.<br><br><text style='color:#10c6eb;font-size: 1.0em;font-weight:700';>Background:</text style> Cycles through different backgrounds.<br><br><text style='color:#10c6eb;font-size: 1.0em;font-weight:700';>Font:</text style> Cycles through fonts in which vocabulary and translation are displayed.<br><br><text style='color:#10c6eb;font-size: 1.0em;font-weight:700';>Layout:</text style> Switches between two layouts of the main buttons.<br><br><br><br><br>You can change more preferences in Vocz; to do so open this script in a text editor like Sublime Text. In the top area of this script is a space where it says on line 13<br><br>// FOR THE USER.<br><br>In the area beneath you find several variables (var) where you can change the values after the equation mark.<br><br>The first variable designates the seperation sign:<br><br>var seperationSign = '|';<br><br>Whatever is in the inverted commas ' ' will be taken to seperate the vocabulary from its translation. You can put in whatever character or combination of character you want, except for spaces alone. Just remember: Whatever it is, it must not occur anywhere else in the file.<br><br>There are more options, that e.g. allow you to tweak the guess time (until the translation shows up), the skip probabilities or what background images will get displayed. Details are explained in the script next to the options.";
+
+	let theText = document.getElementById("ShowUserSettings");
+    	theText.innerHTML = howToText;
+    	makeRoom(theText);
+	let infoTextBackground = document.getElementById("displayInfoText");
+	let switchAboutUserSettings = document.getElementById("switchAboutUserSettings");
+
+	if (userSettings)
+	{
+		infoTextBackground.style["background-color"] = "rgba(0,0,0,0.5)";
+		switchAboutUserSettings.style["background"] = "#7baeff";
+  		elementOn(theText);
+  		userSettings = false;
+	}
+	else
+	{
+		infoTextBackground.style["background-color"] = "rgba(0,0,0,0.0)";
+		switchAboutUserSettings.style["background"] = "#2c3b66";
+  		elementOff(theText);
+  		userSettings = true;
+	}
+}
+
+function showAboutFiles()
+{
+    let howToText1 = "Vocz will read the content of the plain text-file (.txt), which should look like this: ";
+   	let howToText2 = "<br><br>vocabulary 1&nbsp&nbsp |&nbsp&nbsp translation 1<br>vocabulary 2&nbsp&nbsp |&nbsp&nbsp translation 2<br>vocabulary 3&nbsp&nbsp |&nbsp&nbsp translation 3<br>";
+    let howToText3 = "<br>Into the text-file, you can write anything you want. Vocz will only regard those lines that have each of these three things:<br><br>word(s)&nbsp&nbsp&nbsp \"separation sign\"&nbsp&nbsp&nbsp word(s) &nbsp&nbsp&nbsp<br><br>The separation sign is a vertical bar | .<br>Spaces don't matter, and anything that doesn't follow these three conditions will be ignored. This allows you to work on your files, extend them, make notes etc. while already using them in Vocz and making progress in learning.<br><br>To write a vocabulary file use a text editor like Sublime Text and save it as a Plain Text (.txt) file.<br><br>You can, as an option, include Titles and Subtitles. Just add the key-word 'VoczTitle' and everything that is in the following line below 'VoczTitle' will be shown as a permanent title. If there's the key-word 'VoczSubtitle', what is written in the line beneath will be displayed as a temporary subtitle when starting a session."
+    let howToText4 = "<br><br>vocabulary 1 | translation 1<br>vocabulary 2 | translation 2<br>vocabulary 3 | translation 3<br><br><br>VoczTitle<br>THE GREAT GATSBY<br><br><br>VoczSubtitle<br>Advanced Vocabulary";
+    
+	let theText1 = document.getElementById("ShowAboutFiles");
+	let theText2 = document.getElementById("ShowAboutFiles2");
+	let theText3 = document.getElementById("ShowAboutFiles3");
+	let theText4 = document.getElementById("ShowAboutFiles4");
+
+	theText2.style["font-family"] = "Montserrat";
+	theText4.style["font-family"] = "Montserrat";
+	theText2.style["font-weight"] = 200;
+	theText4.style["font-weight"] = 200;
+	theText1.innerHTML = howToText1;
+	theText2.innerHTML = howToText2;
+	theText3.innerHTML = howToText3;
+	theText4.innerHTML = howToText4;
+
+	makeRoom(theText1);
+	
+	let infoTextBackground = document.getElementById("displayInfoText");
+	let switchAboutFiles = document.getElementById("switchAboutFiles");
+
+	if (aboutFiles)
+	{
+		infoTextBackground.style["background-color"] = "rgba(0,0,0,0.5)";
+		switchAboutFiles.style["background"] = "#7baeff";
+  		elementOn(theText1);
+  		elementOn(theText2);
+  		elementOn(theText3);
+  		elementOn(theText4);
+  		aboutFiles = false;
+	}
+	else
+	{	infoTextBackground.style["background-color"] = "rgba(0,0,0,0.0)";
+		switchAboutFiles.style["background"] = "#2c3b66";
+  		elementOff(theText1);
+  		elementOff(theText2);
+  		elementOff(theText3);
+  		elementOff(theText4);
+  		aboutFiles = true;
+	}
+}
+
+function showAboutPromotionSavings()
+{
+    let howToText = "The saving of your promotions is dependant on your browser as Vocz puts them into your local browser storage. Opening a different browser will cause all words to be by default.<br><br>Promotions are linked to the vocabularies only, not to their translations!<br>If a file is changed, Vocz will launch a comparison-search-run, where it links all old promotions to the same vocabularies that are to find in the changed file.<br>That allows You to extend a file and keep promotions while already using it in Vocz.<br><br>For resetting all promotions of the opened file hit the 'Delete'-key three times within three seconds.<br><br>Important: All settings are linked to the name of your vocabulary text file. Changing a file-name will give all words unpromoted.<br>Clearing browser data or uninstalling the browser might also remove your promotions.";
+
+	let theText = document.getElementById("ShowAboutPromotionSavings");
+	theText.innerHTML = howToText;
+	makeRoom(theText);
+	let infoTextBackground = document.getElementById("displayInfoText");
+	let switchAboutPromotionSavings = document.getElementById("switchAboutPromotionSavings");
+
+	if (aboutPromotionSavings)
+	{ 
+		infoTextBackground.style["background-color"] = "rgba(0,0,0,0.5)";
+		switchAboutPromotionSavings.style["background"] = "#7baeff";
+  		elementOn(theText);
+  		aboutPromotionSavings = false;
+	}
+	else
+	{
+		infoTextBackground.style["background-color"] = "rgba(0,0,0,0.0)";
+		switchAboutPromotionSavings.style["background"] = "#2c3b66";
+  		elementOff(theText);
+  		aboutPromotionSavings = true;
+	}
+}
+
+function showAboutIntention()
+{
+    let howToText = "There is a big difference between guessing a word from its context and actually knowing it.<br><br>I noticed on myself and other students that, whether written or spoken, we didn't use many synonyms or rich vocabulary. It became clear to me that to level up in being eloquent, explicitly learning advanced vocabulary is the only thing for it.<br><br>And this is where I became curious about getting deeper into English; I wanted depth, variety and clarity.<br>With 'guessing' I mean that subliminal feeling to know the word when it occures while reading, hearing or watching. But do You actually know it? Would you be able to call it whenever it fits the situation, and would you be able to differentiate it from synonyms, with flair?<br>When reading English journals or novels, I was at times not able to grasp the exact meaning, even though the word kept occurring, it's especially difficult to infer a meaning from a vocabulary when the sentence or context hinges on that word. The point of realization came, when I later thought, spoke or wrote in English, and was not able remember those words or to place them fittingly.<br><br>In the end I had to come back to learning vocabulary, only that gave me the liberty to remember and use it actively and adequately.<br><br>When you will use the foreign language actively in the future (speaking and writing), the treasure hoard of having dived into advanced vocabulary becomes visible. It is the ability to describe the same thing from four different angles.<br>And I am certain that all passive consumption will be more relaxed, meaningful and colourful as well.";
+
+  	let theText = document.getElementById("ShowAboutIntention");
+  	theText.innerHTML = howToText;
+  	makeRoom(theText);
+  	let infoTextBackground = document.getElementById("displayInfoText");
+  	let switchAboutIntention = document.getElementById("switchAboutIntention");
+	
+  	if (aboutIntention)
+  	{
+  		infoTextBackground.style["background-color"] = "rgba(0,0,0,0.5)";
+  		switchAboutIntention.style["background"] = "#e783ff";
+    	elementOn(theText);
+    	aboutIntention = false;
+  	}
+  	else
+  	{
+  		infoTextBackground.style["background-color"] = "rgba(0,0,0,0.0)";
+  		switchAboutIntention.style["background"] = "#422c60";
+    	elementOff(theText);
+    	aboutIntention = true;
+  	}
+}
+
+function showAboutAdvancedVocabulary()
+{
+    let howToText = "Originally I started using English-German dictionaries, but that soon proved unsatisfying. As I progressed into advanced English, I kept coming upon translations that just missed the mark, at times by a lot (using established dictionaries like PONS or Langenscheidt). Foreign language dictionaries are useful for translation of object names, but when it comes to advanced vocabulary that describe feelings, behaviour or cultural expressions, an English dictionary is simply superior.<br>There're many words, which simply have no one-to-one translation to one's mother-tongue. Expressions are culture-specific, but cultures come in different colours.<br><br>...when you think you know English. After years of using English dictionaries only, it's still a common experience to come upon expressions I've never heard before.<br><br>English is vast.";
+
+  	let theText = document.getElementById("showAboutAdvancedVocabulary");
+  	theText.innerHTML = howToText;
+  	makeRoom(theText);
+  	let infoTextBackground = document.getElementById("displayInfoText");
+  	let switchAboutAdvancedVocabulary = document.getElementById("switchAboutAdvancedVocabulary");	
+
+  	if (aboutInterpretation)
+  	{
+  		infoTextBackground.style["background-color"] = "rgba(0,0,0,0.5)";
+  		switchAboutAdvancedVocabulary.style["background"] = "#e783ff";
+    	elementOn(theText);
+    	aboutInterpretation = false;
+  	}
+  	else
+  	{
+  		infoTextBackground.style["background-color"] = "rgba(0,0,0,0.0)";
+  		switchAboutAdvancedVocabulary.style["background"] = "#422c60";
+    	elementOff(theText);
+    	aboutInterpretation = true;
+  	}
+}
+</script>
+
+
+
+
+
+<script> // USER SETTINGS
+// This script is about the user preferences.
+// All the functions from the trigger events block themselves for a moment when they're called. Originally that was to ensure smooth messages displayes, which took usually about 2 seconds until it would unfade. But meanwhile I progressed to solve the communication to the user over the visuals of the buttons. I still kept a little block-unblock time of 500ms, which gives it all a more solid, professional feel.
+// The 2600ms block-time for the changeBackground function is to ensure the background-image ease-out transition of 2.5sec (in 'body' at the beginning of the CSS section).
+
+var blockedBackground = false;
+var backgroundCycle = 1;
+var switchOccurred = false;
+function changeBackground()
+{
+	console.log("blockedBackground ? " + blockedBackground);
+	
+	if (!blockedBackground)
+	{
+  		// the direct setting of the backgroundCycle value is necessary to make sure that by clicking on the "background" button, it keeps alternating between available images only. Let's say only images 3 and 4 get loaded because the other links are dead. If you have a backgroundCycle counter that adds one after every switch-use, you will for the first three clicks only get image 3 (fall-through for 1 and 2), then image 4 once and then three times image 3 again (plus each time waiting windowTimeout), which is confusing for the user. So by direct value setting, you make sure it jumps directly to the active cases, that by the first time it falls through to case 3, case 4 gets set for the next use instantly.
+  		
+  		blockedBackground = true;
+  		
+  		do
+  		{
+      		switch (backgroundCycle)
+      		{
+      			case 1:
+      				if (imgLoaded(newImg2))
+      				{
+      					document.body.style.backgroundImage = "url("+newImg2.src+")";
+      					backgroundCycle = 2;
+      					switchOccurred = true;
+      					break;
+      				}
+      			case 2:
+					if (imgLoaded(newImg3))
+					{
+						document.body.style.backgroundImage = "url("+newImg3.src+")";
+						backgroundCycle = 3;
+						switchOccurred = true;
+						break;
+					}
+				case 3:
+					if (imgLoaded(newImg4))
+					{
+						document.body.style.backgroundImage = "url("+newImg4.src+")";
+						backgroundCycle = 4;
+						switchOccurred = true;
+						break;
+					}
+				case 4:
+					backgroundCycle = 1;
+					if (imgLoaded(newImg1))
+					{
+						document.body.style.backgroundImage = "url("+newImg1.src+")";
+						switchOccurred = true;
+					}
+			}
+		} while (!switchOccurred)
+		switchOccurred = false;
+	
+		// assuming that e.g. the images in the last two switch cases aren't loaded, because the links are dead or not working, having arrived at case 3 from having been at case 2 at the previous call of this function would then just make the switch block run to the end without switching an image. Thus the while loop and switchOccurred make certain that it gets called again, so that with every click it would, in this case, keep alternating between case 1 and 2.
+  		setTimeout(function () 
+		{
+  			blockedBackground = false;
+		},2600);
+	}
+}
+
+var blockFont = false;
+var fontCycle = 1;
+function switchFont()
+{
+	if (!blockFont)
+	{
+		blockFont = true;
+		let voczDisplay = document.getElementById("voczDisplay");
+		let whichMessage = simultaneousMessages.pop();
+		let message = document.getElementById(whichMessage);
+		let tempSub = "";
+		
+		switch(fontCycle)
+		{
+			case 1:
+				voczDisplay.style.fontFamily = "Crimson Text";
+				voczDisplay.style.fontSize = "23px";
+				voczDisplay.style.letterSpacing = "0.05em";
+				letterSpacing = "0.05em";
+				console.log("Font: Crimson Text");
+				tempSub = "Crimson Text";
+				fontCycle ++;
+				break;
+			case 2:
+				voczDisplay.style.fontFamily = "Gaegu";
+				voczDisplay.style.fontSize = "27px";
+				voczDisplay.style.letterSpacing = "0.00em";
+				letterSpacing = "0.00em";
+				voczDisplay.style.fontWeight = 400;
+				console.log("Font: Gaegu");
+				tempSub = "Gaegu";
+				fontCycle ++;
+				break;
+			case 3:
+				voczDisplay.style.fontFamily = "East Sea Dokdo";
+				voczDisplay.style.fontSize = "40px";
+				voczDisplay.style.letterSpacing = "0.00em";
+				letterSpacing = "0.00em";
+				console.log("Font: East Sea Dokdo");
+				tempSub = "East Sea Dokdo";
+				fontCycle++;
+				break;
+			case 4:
+				voczDisplay.style.fontFamily = "EB Garamond";
+				voczDisplay.style.fontSize = "23px";
+				voczDisplay.style.letterSpacing = "0.05em";
+				letterSpacing = "0.05em";
+				console.log("Font: EB Garamond");
+				tempSub = "EB Garamond";
+				fontCycle = 1;
+				break;
+		}
+		message.innerHTML = tempSub;
+		elementOn(message);
+		setTimeout(elementOff,1500,message);
+		setTimeout(function () 
+		{
+  			blockFont = false;
+		},2500);
+		setTimeout(pushSimultaneousMessages,2500,whichMessage);
+	}
+}
+
+var blockedDelay = false;
+var triggerPromotionDelay = true;
+function promotionDelay()
+{      
+	if (extraEntry && !rememberDelayPreference)
+	{
+		let element = document.getElementById("switchManualEntry");
+		element.style.background = "#76CADD";
+		setTimeout(function () 
+		{
+		element.style.background = "#429EBA";
+		},500);
+	}
+    else if (!blockedDelay && !rememberDelayPreference && !extraEntry)
+	{
+		let element = document.getElementById("switchDelay");
+		
+		blockedDelay = true;
+		
+		//let whichMessage = simultaneousMessages.pop();
+		//let message = document.getElementById(whichMessage);
+  		//let tempSub = "";
+  		
+  		if (triggerPromotionDelay)
+  		{
+    		//tempSub = "Inactive\nTranslations will appear instantly.";
+    		triggerPromotionDelay  = false;
+    		element.style.color = "#ead4be";
+			element.style.background = "#33464C";
+  		}
+  		else
+  		{
+    		//tempSub = "Active";
+    		triggerPromotionDelay = true;
+    		element.style.color = "#ffffff";
+			element.style.background = "#429EBA";
+  		}
+  		//elementOn(message);
+  		//message.innerText = tempSub;
+  		//setTimeout(elementOff,1500,message);
+  		setTimeout(function () 
+		{
+  			blockedDelay = false;
+		},500); // 2500 with message display
+  		//setTimeout(pushSimultaneousMessages,2500,whichMessage)	
+	}
+}
+
+var blockedSkipping = false;
+var skipping = true;
+function skippingPromotions()
+{
+	if (!blockedSkipping)
+	{
+		let element = document.getElementById("switchSkipping");
+		
+		blockedSkipping = true;
+		
+		//let whichMessage = simultaneousMessages.pop();
+		//let message = document.getElementById(whichMessage);      
+		//let tempSub = "";
+	
+  		if (skipping)
+  		{
+    		//tempSub = "Inactive\nPromotions are ignored.";
+    		skipping  = false;
+    		element.style.color = "#ead4be";
+			element.style.background = "#33464C";
+  		}
+  		else
+  		{
+    		//tempSub = "Active";
+    		skipping = true;
+    		element.style.color = "#ffffff";
+			element.style.background = "#429EBA";
+  		}
+  		
+  		//message.innerText = tempSub;
+  		//elementOn(message);
+  		//setTimeout(elementOff,1500,message);
+  		setTimeout(function () 
+		{
+  			blockedSkipping = false;
+		},500); // 2500 with message display
+  		//setTimeout(pushSimultaneousMessages,2500,whichMessage)
+	}  
+}
+
+var blockTranslationCall = false;
+var rememberDelayPreference = false;
+var extraEntry = false;
+function translationCall()
+{
+	if (!blockTranslationCall)
+	{
+		let element = document.getElementById("switchManualEntry");
+		let elementDelayTrigger = document.getElementById("switchDelay");
+		
+		blockTranslationCall = true;
+	
+		//let whichMessage = simultaneousMessages.pop();
+		//let message = document.getElementById(whichMessage);
+		//let tempSub = "";    		
+	
+  		if(!extraEntry)
+  		{
+   			extraEntry = true;
+   			if (triggerPromotionDelay)
+   			{
+   				triggerPromotionDelay = false; // otherwise you'd have to wait the delay after hitting next for the translation.
+   				rememberDelayPreference = true; // because translationCall switches off the delay, this variable remembers to switch it back on
+   				elementDelayTrigger.style.color = "#ABD1D6";
+				elementDelayTrigger.style.background = "#569199";
+   			}
+   			//tempSub = "Active\nTranslations will wait for manual entry";
+   			element.style.color = "#ffffff";
+			element.style.background = "#429EBA";
+  		}
+  		else
+  		{
+    		extraEntry = false;
+    		//tempSub = "Inactive";
+    		if (rememberDelayPreference)
+    		{
+    			triggerPromotionDelay = true;
+   				rememberDelayPreference = false;
+   				elementDelayTrigger.style.color = "#ffffff";
+				elementDelayTrigger.style.background = "#429EBA";
+    		}
+    		element.style.color = "#ead4be";
+			element.style.background = "#33464C";
+  		}
+  		//elementOn(message);
+  		//message.innerText = tempSub;
+  		//setTimeout(elementOff,1500,message);
+  		setTimeout(function () 
+		{
+  			blockTranslationCall = false;
+		},500); // 2500 with message display
+  		//setTimeout(pushSimultaneousMessages,2500,whichMessage);
+	}    
+}
+
+var blockSwitchLayout = false;
+var differentLayout = false;
+function switchLayout()
+{
+	if (!blockSwitchLayout)
+	{
+		blockSwitchLayout = true;
+		
+		let topRed = document.getElementById('redMainTrigger');
+		let topBlue = document.getElementById('blueMainTrigger');
+		let topPurple = document.getElementById('purpleMainTrigger');
+		let topOrange = document.getElementById('replayTrigger');
+		let bottomRed = document.getElementById('redMainTrigger2');
+		let bottomBlue = document.getElementById('blueMainTrigger2');
+		let bottomPurple = document.getElementById('purpleMainTrigger2');
+		let bottomOrange = document.getElementById('replayTrigger2');
+		
+		if(!differentLayout)
+  		{
+  			differentLayout = true;
+  			if (topRed.style["display"] == "inline")
+  			{
+  				console.log("display: none");
+  				elementOff(topRed);
+  				setTimeout(elementOn,750,bottomRed);
+  			} 
+  			else if (topOrange.style["display"] == "inline")
+  			{
+  				console.log("display: none");
+  				elementOff(topOrange)
+  				setTimeout(elementOn,750,bottomOrange);
+  			}
+  			elementOff(topBlue);
+  			elementOff(topPurple);
+  			setTimeout(elementOn,500,bottomBlue);
+  			setTimeout(elementOn,1000,bottomPurple);
+  		}
+  		else
+  		{
+  			differentLayout = false;
+  			
+  			if (bottomRed.style["display"] == "inline")
+  			{
+  				elementOff(bottomRed);
+  				setTimeout(elementOn,500,topRed);
+  			} 
+  			else if (bottomOrange.style["display"] == "inline")
+  			{
+  				elementOff(bottomOrange)
+  				setTimeout(elementOn,500,topOrange);
+  			}
+  			elementOff(bottomBlue);
+  			elementOff(bottomPurple);
+  			setTimeout(elementOn,750,topBlue);
+  			setTimeout(elementOn,1000,topPurple);
+  		}
+  		showInfo();
+  		setTimeout(function () 
+		{
+  			blockSwitchLayout = false;
+		},2000);
+	}
+}
+
+var blockReplay = false;
+var replayTriggerVisible = false;
+function replay()
+{
+   	if(!blockReplay)
+	{
+  		blockReplay = true;
+  		replayTriggerVisible = false;
+  		      		
+  		let subtitle = document.getElementById("Message0");
+  		elementOff(subtitle);
+
+  		let whichMessage = simultaneousMessages.pop();
+		let message = document.getElementById(whichMessage);
+	
+  		shuffledSuccession.sort(function() { return 0.5 - Math.random() });
+  
+  		counter = -1;
+  		stillGoing = true;
+  		runFinished = false;
+  		traceBackUnskippedVocz.length = 0;
+  		traceBackCounter = -1;
+  		skippedVocz = 0;
+  		skippedVoczArray = [];
+
+  		if(!callFromOutside)
+		{
+			showInfo();
+		}
+		else
+		{
+		 	makeRoom();
+		}
+
+  		let tempSub = "Vocz shuffled.";
+  		message.innerHTML = tempSub;
+  		elementOn(message);
+  		setTimeout(elementOff,2000,message);
+  		setTimeout(fade,0,showVocz);
+  		setTimeout(fade,250,showTranslation);
+  		setTimeout(function () 
+		{
+			showTranslation.innerHTML = "";
+		},750);
+  		oldElement = ""; // it needs to be reset: for the very rare case that it starts with the same vocabulary that was displayed last in the previous run.
+  
+  		let replayButton;
+  		let forwardButton;
+  		if (!differentLayout)
+  		{
+  			replayButton = document.getElementById("replayTrigger");
+  			forwardButton = document.getElementById("redMainTrigger");
+  		}
+  		else
+  		{
+  			replayButton = document.getElementById("replayTrigger2");
+  			forwardButton = document.getElementById("redMainTrigger2");
+  			
+  		}
+  		setTimeout(elementOff,750,replayButton);
+  		setTimeout(elementOn,1250,forwardButton);
+		
+  		setTimeout(function () 
+		{
+  			blockReplay = false;
+		},2000);
+  		setTimeout(pushSimultaneousMessages,2000,whichMessage)
+	}
+}
+
+function pushSimultaneousMessages (pushMessage)
+{
+	simultaneousMessages.push(pushMessage);
+}
+</script>
+
+
+
+
+
+<script> // FILE HANDLING & LOCAL STORAGE
+// Here it gets the file, reads out content, makes saves to local storage and calls them from there if file opened before.
+
+function dragOver(event)
+{
+	event.stopPropagation();
+	event.preventDefault();
+}
+function drop(event) // Drag and Drop
+{
+	event.stopPropagation();
+	event.preventDefault();
+	var files = event.dataTransfer.files;
+	checkFile(files[0]);
+}
+
+function openFile() // Click on "Open"
+{
+	let files = event.target.files;
+	checkFile(files[0]);
+}
+
+var firstCallNextFile = false;
+function checkFile(file)
+{
+    if (!(file.type == "text/plain"))
+   	{
+  		subtitle.innerHTML = "You can only upload plain text-files (.txt-extension)";
+  		unfade(subtitle);
+  		return;
+    }
+
+   	if(!callFromOutside)showInfo();
+    	
+	if(hasAFile)
+	{
+		if (replayTriggerVisible)
+		{
+    		let tempReplay;
+    		if (!differentLayout)
+    		{
+      			tempReplay = document.getElementById("replayTrigger");
+    		}
+    		else
+    		{
+    			tempReplay = document.getElementById("replayTrigger2");
+    		}
+			setTimeout(elementOff,500,tempReplay);
+			setTimeout(function () 
+    		{
+				blockReplay = false;
+			},1750);
+      		replayTriggerVisible = false;
+      		let message = document.getElementById("Message0");
+      		elementOff(message); // this is for the rare case if the user loads a new file when having reached the end of a previous file (showing endMessage);
+		}
+		
+  		fade(showVocz);
+  		fade(showTranslation);
+  		resetForNewFile();
+  		console.log("File changed!");
+  		firstCallNextFile = true;
+	}
+    	
+    hasAFile = true;
+
+	let reader = new FileReader();
+    reader.onload = function()
+	{
+		readFile(reader.result,file);
+    }
+    reader.readAsText(file);
+}
+
+function readFile (text,file)
+{
+    let lines = text.split('\n');
+      	
+    let voczTitle = 'VoczTitle';
+	let voczSubtitle = 'VoczSubtitle';
+	let title;
+	let subtitle;
+	
+	if ((text.indexOf(voczTitle) == -1) && hasATitle) // if there was already a title from a previous file, but the new one hasn't one. Otherwise previous title would stay.
+	{
+		let titleElement = document.getElementById("Title");
+		elementOff(titleElement);
+		hasATitle = false;
+	}
+	
+	// checking for title or / and subtitle
+	// checking whether there is the signifier word 'VoczTitle' / 'VoczSubtitle', whether it is only the signifier in the line, and if so, whether there are actually characters in the next line (titles). It trims the signifier of (spacebar) spaces in case the user added some (and still takes if there're no other characters).
+	for (let x=0; x<lines.length; x++)
+	{
+		if(lines[x].indexOf(voczTitle) != -1)
+		{
+			lines[x] = lines[x].trim();
+			if (lines[x]==voczTitle && /\S/.test(lines[x+1]))
+			{
+				title = lines[x+1];
+			}
+		}
+		if(lines[x].indexOf(voczSubtitle) != -1)
+		{	
+			lines[x] = lines[x].trim();
+			if (lines[x]==voczSubtitle && /\S/.test(lines[x+1]))
+			{
+				subtitle = lines[x+1];
+			}
+		}
+	}
+	
+	// from hereon the file gets cleaned
+      	
+  	// throwing out lines that have no separation sign
+  	for (let x=0; x<lines.length; x++)
+  	{
+    	if(lines[x].indexOf(seperationSign)<0)
+    	{
+      		lines.splice(x,1); console.log("No seperationSign at: " + x);x--;
+    	}
+ 	}
+     	
+    let bothLangs = [];
+        
+	for(let line = 0; line < lines.length; line++)
+	{
+  		bothLangs = lines[line].split(seperationSign);
+  		vocz.push(bothLangs[0]);
+  		voczTranslation.push(bothLangs[1]);
+	}
+	
+  	// throwing out lines where vocabulary has no letter (only empty space), or its translation
+  	for (let x=0; x<lines.length; x++)
+  	{
+    	if( !(/\S/.test(vocz[x])) || !(/\S/.test(voczTranslation[x])))
+    	{
+    		vocz.splice(x,1); voczTranslation.splice(x,1); console.log("empty voc at: " + x);	
+    		x--; 
+    	}
+  	}
+      	
+  	voczAmount = vocz.length;
+  	console.log("Amount of Vocz: " +vocz.length+"\n\n");
+  	
+  	// trimming possible empty space from both ends of strings, only making the vocabulary recognizable
+  	for (let x=0; x<voczAmount; x++)
+  	{
+  		vocz[x] = vocz[x].trim();
+  		voczTranslation[x] = voczTranslation[x].trim();
+  	}
+  	
+  	// creating an overly array with suffled positions
+  	for (let x =0; x<voczAmount;x++)
+  	{
+   		shuffledSuccession[x]=x;
+    	promotions[x] = promotionStart;
+  	}
+  	
+  	shuffledSuccession.sort(function() { return 0.5 - Math.random() });
+  	
+  	// loading title and subtitle if there are any
+  	if (!(typeof title === 'undefined'))
+	{
+		let titleElement = document.getElementById("Title");
+		titleElement.innerHTML = title;
+		elementOn(titleElement);
+		console.log("Title: "+title);
+		hasATitle = true;
+	}
+	
+	if (!(typeof subtitle === 'undefined'))
+	{
+		let message = document.getElementById("Message0");	
+		message.innerHTML = subtitle;
+		elementOn(message);
+		console.log("Subtitle: "+subtitle);
+	}
+      	
+  	// check for old promotions
+  	checkModification(file);
+  	let red;
+  	if (!differentLayout)
+  	{
+  		red = document.getElementById("redMainTrigger");
+  	}
+   	else
+   	{
+   		red = document.getElementById("redMainTrigger2");
+   	}
+    setTimeout(elementOn,1000,red,0.05);
+}
+
+function checkModification(theFile)
+{
+	let fileInformation = theFile;
+
+	fileName = fileInformation.name;
+	
+	let fileSize = fileInformation.size;
+	let fileType = fileInformation.type;
+	let fileDate = fileInformation.lastModified;
+	console.log("File name: "+fileName);
+	console.log("File size: "+(fileSize/1024)+" KB");
+	console.log("File type: "+fileType);
+	console.log("File date: "+new Date(fileDate)+"\n\n");
+
+	let fileDateInformationStored = fileName.concat("Date");
+	
+	if(localStorage.getItem(fileName)!=null)
+	{
+  		console.log("Call from local Storage.");
+  
+  		loadedVocz = localStorage.getItem(fileName);
+  		loadedVocz = JSON.parse(loadedVocz);
+
+  		let storedPromotions = fileName.concat("Promotion");
+  		loadedVoczPromotions = localStorage.getItem(storedPromotions);
+  		loadedVoczPromotions = JSON.parse(loadedVoczPromotions);
+  		
+  		loadedVoczAmount = loadedVocz.length;
+
+  		fileDateLoad = localStorage.getItem(fileDateInformationStored);
+        
+  		if (fileDate == fileDateLoad)
+  		{
+    		console.log("File unchanged. No search run necessary.\n\n");
+    		promotions = loadedVoczPromotions;
+    		// console.log("Words and their promotions from last time:\n");
+    		console.log("\n\n\nThe vocabulary and its promotions:");
+    		for (let x = 0; x < voczAmount; x++)
+    		{
+    			console.log(vocz[x]+":  "+promotions[x]+"\n");
+    		}
+    		console.log("\n\n\n");
+  		}
+  		else
+  		{
+    		console.log("File changed! Launching comparison run.\n\n");
+    		startComparisonRun();
+    		localStorage.setItem(fileDateInformationStored,fileDate);
+  		}
+	}
+	else
+	{
+  		localStorage.setItem(fileDateInformationStored,fileDate);
+  		console.log("File opened for the first time.\nNew local Storage created for: " + fileInformation.name+"\n\n");
+	}
+}
+
+function startComparisonRun()
+{
+	// Here it runs the comparison run. For every user data vocabulary, it goes as long through the file vocabularies until it finds a match, voc files aren't sorted. If there is a match, it loads the user data promotion into the present promotion of this session, and then uses the splice function to delete that word from the loadedVocz array, shrinking it.
+	// When using splice to delete, the next word moves to present position. But directly afterwards the loop moves to the next position, which would cause it to skip the word next to the deleted one. Thus it goes back one slot after deleting. Because of that I couldn’t just use the x variable in array loadedVoczPromotions, it would stay at index 0. I had to add an extra counter: positionOfLoadedPromotion.
+
+	let positionOfLoadedPromotion = -1;
+
+	for (let x =0; x < loadedVoczAmount; x++)
+	{
+		positionOfLoadedPromotion++;
+  		for (let y = 0; y < voczAmount; y++)
+  		{
+    		if (vocz[y] === loadedVocz[x])
+    		{
+      			promotions[y] = loadedVoczPromotions[positionOfLoadedPromotion];
+      			loadedVocz.splice(x,1);
+      			x--;
+      			y=0;
+    		}
+  		}
+	}
+	saveToLocalStore();
+
+	console.log("Words and promotions after comparison run:\n");
+	for (let x = 0; x < voczAmount; x++)
+	{
+		console.log(vocz[x]+":  "+promotions[x]+"\n");
+	}
+}
+</script>
+
+
+
+
+
+<style> /* One of two CSS styling parts: in this one are all the ID-elements. Every element that has only one existence has an ID. There're also class-elements in the second CSS part for multi-use construction elements.*/
+html
+{
+	height: 100%; /* this is important to make certain that there's no white space below or / and above the background image, depending in its aspect ratio.*/
+}
+body
+{
+	transition: background-image 2.5s ease-out;
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	background-position: center bottom;
+	background-size: cover;
+	text-align: center;
+}
+#wholeContent
+{
+	margin:auto;
+	height: 800px; overflow-y: auto; overflow-x: hidden;
+}::-webkit-scrollbar
+{
+    	display: none;
+}
+#Title{display:none;}
+#Message1{display:none;}
+#Message2{display:none;}
+#Message3{display:none;}
+#Message4{display:none;}
+#Message5{display:none;}
+#voczDisplay
+{
+	font-family: 'EB Garamond';
+	font-size: 23px;
+	letter-spacing: 0.05em;
+	font-weight: normal;
+	
+	width: 1000px;
+	margin:auto;
+	color:rgb(255,255,255);
+	padding-top: 50px;
+	display: flex;
+	flex-direction: column;
+}
+#vocAsked 
+{
+	padding-left: 200px;
+	text-align: left;
+}
+
+#vocTranslation
+{
+	padding-right: 200px;
+	text-align: right;
+}
+#verticalSpaceTitle
+{
+	margin-top: 100px;
+}
+#centerMainTriggers
+{
+	margin:auto;
+	width: 600px;
+	display: flex;
+	flex-direction: column;
+}
+#verticalSpaceMainTriggers
+{
+	margin-top: 125px;
+}
+#bottomMainTriggers
+{
+	margin:auto;
+	width: 1000px;
+}
+#userPreferences
+{
+	display:none;
+}
+#infoTrigger
+{
+	margin:auto;
+	display: none;
+}
+#displayInfoText
+{
+	font-family: 'EB Garamond';
+	width: 600px;
+	color:rgb(255,255,255);
+	line-height: 1.1em;
+	text-align: justify;
+	margin: auto;
+	font-size: 21px;
+	letter-spacing: 0.075em;
+	font-weight: normal;
+	background-color: rgba(0,0,0,0.0);
+	border-radius: 15px;
+	padding: 20px;
+}
+#blueMainTrigger{display: none;}
+#redMainTrigger{display: none;	}
+#replayTrigger{display: none;}
+#purpleMainTrigger{display: none;}
+#bottomMainTriggers
+{
+	width:900px;
+	margin:auto;
+	bottom: 0;
+	display: flex;
+	flex-direction: row;
+}
+#replayTrigger2{display: none; margin:auto;}
+#redMainTrigger2{display: none; margin:auto;}
+#blueMainTrigger2{display: none; margin:auto;}
+#purpleMainTrigger2{display: none; margin:auto;}
+</style>
+
+
+
+
+
+<style> /* This styling part contains classes for repeated styling of elements, mostly it's about triggers. */
+
+/*
+.gradientLine
+{ 
+	margin: 20px 0;
+	height: 3px;
+	background: -webkit-linear-gradient(left,rgba(255,0,0,0),rgba(255,255,255,1),rgba(255,0,0,0));
+}*/
+.verticalSpace
+{
+	margin-top: 50px;
+}
+.whiteBorder
+{
+	margin: auto;
+	width: 700px;
+	display: flex;
+}
+.rectangle
+{
+	margin-left: 5px;
+	margin-right: 5px;
+	border-radius: 1px;
+	background: #FFFFFF;
+	width: 610px;
+	height: 2px;
+	margin-top: 2px;
+}
+.circleBase
+{
+	border-radius: 50%;
+}
+.circleLeft
+{
+	width: 6px;
+	height: 6px;
+	background: #FFFFFF;
+	margin:auto;
+}
+.circleRight
+{
+	width: 6px;
+	height: 6px;
+	background: #FFFFFF;
+	margin: auto;
+}
+
+.button
+{
+	display: inline-block;
+	height: 50px;
+	line-height: 50px;
+	padding-right: 30px;
+	padding-left: 85px;
+	position: relative;
+	color:rgb(255,255,255);
+	text-decoration: none;
+	/*text-transform: uppercase;*/
+	letter-spacing: .2em;
+	margin-bottom: 15px;
+	margin-right: 5px;
+	margin-left: 5px;
+	border-radius: 25px;
+	border-bottom: 8px solid  rgba(0,0,0,0.5);;
+	border-left: 5px solid  rgba(0,0,0,0.5);;
+	border-right: 5px solid  rgba(0,0,0,0.5);;
+}
+span
+{
+	font-family: 'Times New Roman';
+	font-size: 45px;
+	font-weight: 400;
+	position: absolute;
+	left: 3px;
+	top: -2px;
+	width: 60px;
+	text-align: center;
+	/*padding-left: 3px;*/
+	border-radius: 25px;
+}
+.button:active 
+{
+	zoom:1.03;
+	border-bottom: 2px solid  rgba(0,0,0,0.5);
+}
+.red
+{
+	background: #D83D5E;
+}
+.orange
+{
+	width: 330px;
+	background: #FF7F00;
+}
+.blue
+{
+	background: #297FB8;
+}
+
+.purple
+{
+	background: #6744aa;
+}
+input
+{
+	visibility: hidden;
+	margin: auto;
+	width: 5px;
+}
+.mainTriggers
+{
+	font-family: 'East Sea Dokdo';
+	font-size: 33px;
+}
+.info
+{
+	padding-left: 30px;
+	font-family: 'Gaegu';
+	font-size:22px;
+	font-weight:700;
+	letter-spacing: 0.00em;
+}
+.howTo
+{
+	background: #2c3b66;
+}
+.motivation
+{
+	background: #422c60;
+}
+
+.userPreferences
+{
+	padding-left: 30px;
+	background: #224154;
+	font-family: 'East Sea Dokdo';
+	font-size:33px;
+	letter-spacing:0.05em;
+	/*font-weight:700;*/
+}
+.userPreferences:active
+{
+	background: #42747c;
+}
+.switchSkipping
+{
+	color: #ffffff;
+	background: #429EBA;
+}
+.switchDelay
+{
+	color: #ffffff;
+	background: #429EBA;
+}
+.switchManualEntry
+{
+	color: #efe0d3;
+	background: #33464C;
+}
+</style>
+
+
+
+
+
+<body>
+<div id="wholeContent">
+	<div id="voczDisplay">
+  			<p id="Title"></p>
+  			<p id="Message0"></p> <!-- Message0 is reserved for subtitles, so that it shows under the title. Message 1 to 5 are dynamic on-off elements for displayed information. The pop-push-list simultaneousMessages[] regulates these on-off elements. -->
+  			<!-- NOTE: The message functionality is mostly inactive now as I deactivated all the messaging functions in the "user preferences" script. Reason: I solved communication through trigger visuals. -->
+  			<p id="Message1"></p>
+  			<p id="Message2"></p>
+  			<p id="Message3"></p>
+  			<p id="Message4"></p>
+  			<p id="Message5"></p>
+  		<div id ="verticalSpaceTitle">
+  		</div>
+  		<div id = "vocAsked">
+  			<p id="Action showVocz" style="cursor:pointer;" onclick='promoteVocz(event)'></p>
+  		</div>
+  		<div class = "whiteBorder">
+  			<div  class = "circleBase circleLeft"></div>
+  			<div  class = "circleBase circleLeft"></div>
+  			<div  class = "circleBase circleLeft"></div>
+  			<div  class = "rectangle"></div>
+  			<div  class = "circleBase circleRight"></div>
+  			<div  class = "circleBase circleRight"></div> 
+  			<div  class = "circleBase circleRight"></div> 
+  		</div>
+		<div id = "vocTranslation">
+  			<p id ="Action showTranslation"></p>
+  		</div>
+  	</div>
+
+  	<div id ="verticalSpaceMainTriggers">
+  	</div>
+      	
+	<div id = "centerMainTriggers" class = "mainTriggers">
+		<div id ="replayTrigger">
+			<a  href="#nogo" class="button orange" onclick='replay(event)'><span>&ldrushar;</span>AGAIN FROM START</a>
+		</div>
+		<div id ="redMainTrigger">
+			<a  href="#nogo" class="button red" onclick='checkBeforeNextVocz(event)'><span>&gtrdot;</span>NEXT</a>
+		</div>
+		<div id ="blueMainTrigger" >
+			    <label class="button blue" style="cursor:pointer;"> <span>&curren;</span>Open<input type="file" accept='text/plain' onchange='openFile(event)'>
+			    </label>
+		</div>
+		<div id = "purpleMainTrigger">
+			<a href="#nogo" class="button purple" onclick='showInfo(event)'><span>&Theta;</span>VOCZ</a>
+		</div>
+	</div>
+	
+	<div class="verticalSpace">
+	</div>
+	
+	<div id = "userPreferences">
+		<div>
+			<a href="#nogo" class="button userPreferences switchSkipping" id= "switchSkipping" onclick='skippingPromotions(event)'>Skipping</a>
+			<a href="#nogo" class="button userPreferences switchDelay" id= "switchDelay" onclick='promotionDelay(event)'>Delay</a>
+			<a href="#nogo" class="button userPreferences switchManualEntry" id= "switchManualEntry" onclick='translationCall(event)'>Translation Call</a>
+		</div>
+		<div>
+			<a href="#nogo" class="button userPreferences" onclick='changeBackground(event)'>Background</a>
+			<a href="#nogo" class="button userPreferences" onclick='switchFont(event)'>Font</a>
+			<a href="#nogo" class="button userPreferences" onclick='switchLayout(event)'>Layout</a>
+		</div>
+	</div>
+	
+	<div class="verticalSpace">
+	</div>
+	
+	<div id = "infoTrigger">
+		<a href="#nogo" class="button info howTo" id="switchHowTo" onclick='showHowTo(event)'>How To</a>
+		<a href="#nogo" class="button info howTo" id="switchAboutUserSettings" onclick='showUserSettings(event)'>User Settings</a>
+		<a href="#nogo" class="button info howTo" id="switchAboutFiles" onclick='showAboutFiles(event)'>Vocz Files</a>
+		<a href="#nogo" class="button info howTo" id="switchAboutPromotionSavings" onclick='showAboutPromotionSavings(event)'>About Saves</a>
+		<div>
+			<a href="#nogo" class="button info motivation" id="switchAboutAdvancedVocabulary" onclick='showAboutAdvancedVocabulary(event)'>Advanced Vocabulary</a>
+			<a href="#nogo" class="button info motivation" id="switchAboutIntention" onclick='showAboutIntention(event)'>The Intention</a>
+		</div>
+	</div>
+	
+	<div class="verticalSpace">
+	</div>
+	
+	<div id = "displayInfoText">
+      	<p id="ShowInfo"></p>
+		<p id="ShowHowTo"></p>
+		<p id="Example 1"></p>
+		<p id="Example 2"></p>
+		<p id="Example 3"></p>
+		<p id="Example 4"></p>
+		<p id="ShowHowTo2"></p>
+		<p id="ShowAboutFiles"></p>
+		<p id="ShowAboutFiles2"></p>
+		<p id="ShowAboutFiles3"></p>
+		<p id="ShowAboutFiles4"></p>
+		<p id="ShowAboutIntention"></p>
+		<p id="showAboutAdvancedVocabulary"></p>
+		<p id="ShowAboutPromotionSavings"></p>
+		<p id="ShowUserSettings"></p>
+	</div>
+</div>
+
+<div id = "bottom">
+	<div class = "whiteBorder">
+		<div  class = "circleBase circleLeft"></div>
+		<div  class = "circleBase circleLeft"></div>
+		<div  class = "circleBase circleLeft"></div>
+		<div  class = "rectangle"></div>
+		<div  class = "circleBase circleRight"></div>
+		<div  class = "circleBase circleRight"></div>
+		<div  class = "circleBase circleRight"></div>
+	</div>
+	
+	<div class="verticalSpace">
+	</div>
+	
+	<div id = "bottomMainTriggers" class = "mainTriggers">
+		<div id ="blueMainTrigger2">
+			<label class="button blue" style="cursor:pointer;">
+				<span>&curren;</span>Open<input type="file" accept='text/plain' onchange='openFile(event)' >
+			</label>
+		</div>
+		<div id ="redMainTrigger2">
+			<a  href="#nogo" class="button red" onclick='checkBeforeNextVocz(event)'><span>&gtrdot;</span>NEXT</a>
+		</div>
+		<div id ="replayTrigger2">
+			<a  href="#nogo" class="button orange" onclick='replay(event)'><span>&ldrushar;</span>AGAIN FROM START</a>
+		</div>
+		<div id = "purpleMainTrigger2">
+			<a href="#nogo" class="button purple" onclick='showInfo(event)'><span>&Theta;</span>VOCZ</a>
+		</div>
+	</div>
+</div>
+</body>
+
+<script> // KEY LISTENER, LOADING IMAGES, START OF SCRIPT
+// final script where the program starts running. Loads key listener, background images, makes a few checks.
+
+var blockThreeTimesDelete = false;
+var threeTimesDelete = 0;
+window.onkeydown = function(event) 
+{
+	event.preventDefault(); // this one prevents last used button (often 'next') to be triggered when hitting enter, as enter is reserved for promoting (so it would promote the present voc every time you hit next with enter). It also prevents the window from scrolling up / down when using arrow keys or spacebar, which are reserved for navigating and pro/demoting vocz.
+	
+	const spaceBar = 32;
+	const enterKey = 13;
+	const deconsteKey = 46;
+	const backspace = 8;
+	
+	const arrowLeft = 37;
+	const arrowUp = 38;
+	const arrowDown = 40;
+	const arrowRight = 39;
+	
+	// if in numpad mode. If not, the signals from the arrows on the numpad are the same as from the arrow keys left from the numpad. numpad enter is the same signal as enterKey.
+	const numpad4 = 100;
+	const numpad5 = 101;
+	const numpad8 = 104;
+	const numpad6 = 102;
+	const numpad2 = 98;
+	const numpadPlus = 107;
+	const numpadMinus = 109;
+	
+	const aKey = 65;
+	const dKey = 68;
+	const wKey = 87;
+	const sKey = 83;
+	
+	let key = event.keyCode || event.which;
+
+	if(hasAFile)
+	{
+  		if (key == spaceBar || key == arrowRight || key == numpad6 || key == dKey)
+  		{
+    		checkBeforeNextVocz();
+  		}
+  		if (key == arrowLeft || key == numpad4 || key == aKey) 
+  		{
+    		getPreviousVocz();
+  		}
+  		if (key == enterKey || key == wKey || key == numpadPlus || key == numpad8 || key == arrowUp) 
+  		{
+    		promoteVocz();
+  		}
+  		if (key == backspace || key == numpadMinus || key == numpad2 || key == numpad5 || key == sKey || key == arrowDown)
+  		{
+    		demoteVocz();
+  		}
+  		if (key == deleteKey)
+  		{
+    		threeTimesDelete++;
+    
+    		if(!blockThreeTimesDelete)
+    		{
+      			blockThreeTimesDelete = true;
+      			setTimeout(function () 
+				{
+  					blockThreeTimesDelete = false;
+  					threeTimesDelete = 0;
+				},3000);
+    		}
+    		if(threeTimesDelete == 3)
+    		{
+      			blockThreeTimesDelete = true;
+      			for (let x =0; x < voczAmount;x++)
+      			{
+        				promotions[x] = promotionStart;
+      			}
+      			
+      			saveToLocalStore();
+      			let whichMessage = simultaneousMessages.pop();
+				let message = document.getElementById(whichMessage);
+      			message.innerHTML = "All promotions have been reset";
+      			elementOn(message);
+      			setTimeout(elementOff,3000,message);
+      			setTimeout(pushSimultaneousMessages,3000,whichMessage);
+
+      			if(traceBackCounter == traceBackUnskippedVocz.length-1)
+      			{
+        			promotionStyle(showVocz,shuffledSuccession[counter]);
+      			}
+      			else
+      			{
+        			promotionStyle(showVocz,traceBackUnskippedVocz[traceBackCounter],false);
+      			}
+      			unfade(showVocz);
+    		}
+  		}
+	}
+}
+
+function imgLoaded(imgElement) 
+{
+	return imgElement.complete && imgElement.naturalWidth !== 0;
+}
+
+var newImg1 = new Image();
+var newImg2 = new Image();
+var newImg3 = new Image();
+var newImg4 = new Image();
+
+function howQuicklyLoaded()
+{
+	console.log("All four background images loaded after three seconds? "+" "+imgLoaded(newImg1)+" "+imgLoaded(newImg2)+" "+imgLoaded(newImg3)+" "+imgLoaded(newImg4));
+}
+
+var AnotherTime1st = AnotherTime2nd = AnotherTime3rd = false;
+
+function checkBackground()
+{
+	if(!imgLoaded(newImg1) && imgLoaded(newImg2))
+	{
+		document.body.style.backgroundImage = "url("+newImg2.src+")";
+		backgroundCycle = 2;
+	}
+	else if (!imgLoaded(newImg2) && imgLoaded(newImg3))
+	{
+		document.body.style.backgroundImage = "url("+newImg3.src+")";
+		backgroundCycle = 3;
+	}
+	else if (!imgLoaded(newImg3) && imgLoaded(newImg4))
+	{
+		document.body.style.backgroundImage = "url("+newImg4.src+")";
+		backgroundCycle = 4;
+	}
+	else if (!imgLoaded(newImg1)) // gives it 3 additional seconds to load an image
+	{
+		if (!AnotherTime1st)
+		{
+			AnotherTime1st = true;
+			setTimeout(checkBackground,1000);
+			console.log("AnotherTime1st: " + AnotherTime1st);
+		}
+		else if (!AnotherTime2nd)
+		{
+			AnotherTime2nd = true;
+			setTimeout(checkBackground,1000);
+			console.log("AnotherTime2nd: " + AnotherTime2nd);
+		}
+		else if (!AnotherTime3rd)
+		{
+			AnotherTime3rd = true;
+			setTimeout(checkBackground,1000);
+			console.log("AnotherTime3rd: " + AnotherTime3rd);
+		}
+		else
+		{
+			window.alert("None of your image paths or image urls seem to work.\nAdd image paths at the beginning of the this script file.\n\nVocz is designed to work on a dark background, so choose dark images to allow a pleasing appearance for the bright vocabulary. Preferebly the features within the image are low in contrast.");
+		}	
+	}	
+}
+
+// The script starts running here
+(function () 
+{	
+	let isChrome = !!window.chrome;
+	console.log("Runs on Chromium: "+isChrome);
+	let isWebKit = navigator.userAgent.indexOf('AppleWebKit') != -1;
+	console.log ("Runs on WebKit / Blink: "+isWebKit);
+	
+	if (!isWebKit)
+	{
+		window.alert("Vocz is only supported in browsers that run on WebKit or Blink");  // this is to ensure visual experience as I only tested it with Edge and Chrome.
+		console.log("program stops here");
+		return;
+	}
+	else
+	{
+		newImg1.src = backgroundOne;
+		
+		setTimeout(function () // the next three images are downloaded after a delay, allowing the first one to be downloaded asap.
+		{
+  			newImg2.src = backgroundTwo;
+		},1000);
+		setTimeout(function () 
+		{
+  			newImg3.src = backgroundThree;
+		},1750);
+		setTimeout(function () 
+		{
+  			newImg4.src = backgroundFour;
+		},2500);
+    		
+		let background = document.getElementsByTagName('body')[0];
+		
+		let screenWidth = screen.width.toString();
+		background.style["background-size"] = screenWidth.concat("px");
+		
+   		setTimeout(howQuicklyLoaded,3000);
+    		 
+		document.body.style.backgroundImage = "url("+newImg1.src+")";
+		
+		// if the path for the first background does not work, this function automatically makes it switch to other images, should they be available. It starts after 3 secs.
+		setTimeout(checkBackground,3000);
+		
+		showVocz = document.getElementById("Action showVocz");
+  		showTranslation = document.getElementById("Action showTranslation");
+	
+   		let blue = document.getElementById("blueMainTrigger2");
+  		let purple = document.getElementById("purpleMainTrigger2");
+  		let dropWindow = document.getElementById('wholeContent');
+  		
+  		setTimeout(elementOn,1000,blue,0.1);
+  		setTimeout(elementOn,1500,purple,0.1);
+  		differentLayout = true;
+  		dropWindow.addEventListener('dragover', dragOver, false);
+  		dropWindow.addEventListener('drop', drop, false);
+  		
+      	console.log("You're good to go\n\n");
+	}
+})();
+</script>
+</html>
