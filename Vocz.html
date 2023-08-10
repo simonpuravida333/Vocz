@@ -2477,50 +2477,48 @@ function checkBackground()
 		console.log("program stops here");
 		return;
 	}
-	else
-	{
-		newImg1.src = backgroundOne;
-		
-		setTimeout(function () // the next three images are downloaded after a delay, allowing the first one to be downloaded asap.
-		{
-  			newImg2.src = backgroundTwo;
-		},1000);
-		setTimeout(function () 
-		{
-  			newImg3.src = backgroundThree;
-		},1750);
-		setTimeout(function () 
-		{
-  			newImg4.src = backgroundFour;
-		},2500);
-    		
-		let background = document.getElementsByTagName('body')[0];
-		
-		let screenWidth = screen.width.toString();
-		background.style["background-size"] = screenWidth.concat("px");
-		
-   		setTimeout(howQuicklyLoaded,3000);
-    		 
-		document.body.style.backgroundImage = "url("+newImg1.src+")";
-		
-		// if the path for the first background does not work, this function automatically makes it switch to other images, should they be available. It starts after 3 secs.
-		setTimeout(checkBackground,3000);
-		
-		showVocz = document.getElementById("Action showVocz");
-  		showTranslation = document.getElementById("Action showTranslation");
+
+	newImg1.src = backgroundOne;
 	
-   		let blue = document.getElementById("blueMainTrigger2");
-  		let purple = document.getElementById("purpleMainTrigger2");
-  		let dropWindow = document.getElementById('wholeContent');
-  		
-  		setTimeout(elementOn,1000,blue,0.1);
-  		setTimeout(elementOn,1500,purple,0.1);
-  		differentLayout = true;
-  		dropWindow.addEventListener('dragover', dragOver, false);
-  		dropWindow.addEventListener('drop', drop, false);
-  		
-      	console.log("You're good to go\n\n");
-	}
+	setTimeout(function () // the next three images are downloaded after a delay, allowing the first one to be downloaded asap.
+	{
+			newImg2.src = backgroundTwo;
+	},1000);
+	setTimeout(function () 
+	{
+			newImg3.src = backgroundThree;
+	},1750);
+	setTimeout(function () 
+	{
+			newImg4.src = backgroundFour;
+	},2500);
+		
+	let background = document.getElementsByTagName('body')[0];
+	
+	let screenWidth = screen.width.toString();
+	background.style["background-size"] = screenWidth.concat("px");
+	
+	setTimeout(howQuicklyLoaded,3000);
+		 
+	document.body.style.backgroundImage = "url("+newImg1.src+")";
+	
+	// if the path for the first background does not work, this function automatically makes it switch to other images, should they be available. It starts after 3 secs.
+	setTimeout(checkBackground,3000);
+	
+	showVocz = document.getElementById("Action showVocz");
+	showTranslation = document.getElementById("Action showTranslation");
+
+	let blue = document.getElementById("blueMainTrigger2");
+	let purple = document.getElementById("purpleMainTrigger2");
+	let dropWindow = document.getElementById('wholeContent');
+	
+	setTimeout(elementOn,1000,blue,0.1);
+	setTimeout(elementOn,1500,purple,0.1);
+	differentLayout = true;
+	dropWindow.addEventListener('dragover', dragOver, false);
+	dropWindow.addEventListener('drop', drop, false);
+		
+  	console.log("You're good to go\n\n");
 })();
 </script>
 </html>
